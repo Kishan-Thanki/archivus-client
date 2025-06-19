@@ -155,7 +155,7 @@ function SignupPage() {
       <div className='center'>
         <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
           <CircularProgress size={80} sx={{ color: 'primary.main' }} />
-          <Typography variant="h6" mt={2} color="text.secondary">Loading registration form data...</Typography>
+          <Typography variant="h6" mt={2} color="text.secondary">Loading registration form...</Typography>
         </Box>
       </div>
     );
@@ -321,6 +321,7 @@ function SignupPage() {
                     onChange={handleChange}
                     label="Program (Optional)"
                     error={!!error?.fieldErrors?.program_id}
+                    disabled={formData.degree_level === ''} // 💥 This disables Program if no Degree Level selected
                   >
                     <MenuItem value=""><em>None</em></MenuItem>
                     {programs.map((program) => (
@@ -331,6 +332,7 @@ function SignupPage() {
                   </Select>
                   {error?.fieldErrors?.program_id && <Typography color="error" variant="caption">{error.fieldErrors.program_id[0]}</Typography>}
                 </FormControl>
+
 
                 {/* Sign Up Button */}
                 <Button
