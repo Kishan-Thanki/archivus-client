@@ -25,7 +25,7 @@ a:hover {
 body {
   margin: 0;
   display: flex;
-  place-items: center;
+  place-items:center;
   min-width: 320px;
   min-height: 100vh;
 }
@@ -65,4 +65,39 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+/* Center the login form wrapper on the page */
+.login-form {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  z-index: 1;
+}
+
+/* Center the signup form wrapper on the page */
+.signup-form {
+  margin-top: -60px;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  z-index: 1;
+  min-height: 100vh; /* Allow to grow if needed */
+}
+
+/* Center the signup form wrapper on the page */
+.center {
+  width: 100vw;
+  height: 100vh;
+  justify-content: center;
 }
