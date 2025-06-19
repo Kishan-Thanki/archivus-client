@@ -1,13 +1,40 @@
 // src/App.jsx
 
-import { useContext } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Snackbar, Alert } from '@mui/material';
 import AppRoutes from './routes/AppRoutes';
 import { ErrorBoundary } from './components/common/ErrorBoundary'; 
 import { NotificationProvider, NotificationContext } from './context/NotificationContext'; 
+import { AuthContext } from './context/AuthContext';
+import InitialLoader from './components/common/InitialLoader';
+
+const LOADER_DURATION = 5000; // 5 seconds
 
 function AppContent() {
   const { notification, setNotification } = useContext(NotificationContext);
+  const { loading } = useContext(AuthContext);
+
+  // Show loader ONLY on the very first visit (per tab/session)
+  const [showLoader, setShowLoader] = useState(() => {
+    return sessionStorage.getItem('archivus_first_load') !== 'done';
+  });
+  const [fadeOut, setFadeOut] = useState(false);
+
+  useEffect(() => {
+    if (showLoader) {
+      const timer = setTimeout(() => {
+        setFadeOut(true);
+        setTimeout(() => {
+          setShowLoader(false);
+          sessionStorage.setItem('archivus_first_load', 'done');
+        }, 1000); // 1s fade duration
+      }, LOADER_DURATION);
+      return () => clearTimeout(timer);
+    }
+  }, [showLoader]);
+
+  if (showLoader) return <InitialLoader fade={fadeOut} />;
+  if (loading) return <InitialLoader />;
 
   return (
     <>
