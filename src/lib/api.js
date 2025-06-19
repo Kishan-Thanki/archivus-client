@@ -9,14 +9,14 @@ const api = axios.create({
   },
 });
 
-// Redirect to login and clear tokens
-const redirectToLogin = () => {
+// 🔐 Logout and redirect utility
+export const logoutUser = () => {
   localStorage.removeItem('accessToken');
   localStorage.removeItem('refreshToken');
   window.location.href = '/login';
 };
 
-// Attach access token to every request
+// 👉 Attach access token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('accessToken');
@@ -28,22 +28,36 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Unwrap "data" from success response
+// ✅ Normalize and handle backend responses
 api.interceptors.response.use(
   (response) => {
-    // Auto-unwrap nested success responses
-    if (response.data?.success) {
+    const { data } = response;
+
+    // ✅ Auto unwrap response if "success: true"
+    if (data?.success) {
       return {
         ...response,
-        data: response.data.data,   // Only return the inner `data`
-        message: response.data.message,
+        data: data.data,       // Only pass the nested `data`
+        message: data.message, // Pass message if needed
       };
     }
+
+    // ❌ Unsuccessful (e.g., 400 but still structured)
+    if (data?.success === false) {
+      return Promise.reject({
+        message: data.message || 'Request failed',
+        errors: data.errors || {},
+        status: response.status,
+      });
+    }
+
+    // 🟨 Unexpected format
     return response;
   },
   async (error) => {
     const originalRequest = error.config;
 
+    // 🔁 Refresh token if 401 (unauthorized)
     if (
       error.response?.status === 401 &&
       originalRequest &&
@@ -54,8 +68,8 @@ api.interceptors.response.use(
       const refreshToken = localStorage.getItem('refreshToken');
 
       if (!refreshToken) {
-        redirectToLogin();
-        return Promise.reject(error);
+        logoutUser();
+        return Promise.reject({ message: 'Session expired. Please log in again.' });
       }
 
       try {
@@ -63,30 +77,44 @@ api.interceptors.response.use(
           refresh: refreshToken,
         });
 
-        const { access, refresh } = refreshResponse.data.data; 
+        const { access, refresh } = refreshResponse.data.data;
 
         localStorage.setItem('accessToken', access);
         localStorage.setItem('refreshToken', refresh);
 
         originalRequest.headers.Authorization = `Bearer ${access}`;
-        return api(originalRequest); 
+        return api(originalRequest);
       } catch (refreshError) {
-        redirectToLogin();
-        return Promise.reject(refreshError);
+        logoutUser();
+        return Promise.reject({ message: 'Token refresh failed. Please log in again.' });
       }
     }
 
-    // Optional: Centralize API error handling (matching your backend)
-    const backendResponse = error.response?.data;
-    if (backendResponse?.success === false) {
+    // 🚫 Handle forbidden access
+    if (error.response?.status === 403) {
+      return Promise.reject({ message: 'Access denied', status: 403 });
+    }
+
+    // 🔴 Handle server errors
+    if (error.response?.status >= 500) {
+      return Promise.reject({ message: 'Server error. Please try again later.', status: 500 });
+    }
+
+    // ⚠️ Catch-all for structured errors
+    const response = error.response?.data;
+    if (response?.success === false) {
       return Promise.reject({
-        message: backendResponse.message,
-        errors: backendResponse.errors || {},
+        message: response.message || 'Error occurred',
+        errors: response.errors || {},
         status: error.response?.status,
       });
     }
 
-    return Promise.reject(error);
+    // 🔻 Unknown error fallback
+    return Promise.reject({
+      message: error.message || 'Something went wrong',
+      status: error.response?.status,
+    });
   }
 );
 

@@ -20,50 +20,50 @@ const LoginForm = () => {
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
-  e.preventDefault();
-  setIsLoading(true);
-  setError('');
+    e.preventDefault();
+    setError('');
 
-  try {
-    const response = await api.post('/auth/login/', {
-      identifier,
-      password,
-    });
-
-    console.log('Login response:', response.data);
-
-    const { tokens, user } = response.data.data || {};
-
-    if (!tokens?.access || !tokens?.refresh || !user) {
-      throw new Error('Missing tokens or user data in response.');
+    // ✅ Client-side validation
+    if (!identifier.trim() || !password.trim()) {
+      setError('Email and password are required.');
+      return;
     }
 
-    const { access, refresh } = tokens;
+    setIsLoading(true);
 
-    localStorage.setItem('accessToken', access);
-    localStorage.setItem('refreshToken', refresh);
-    localStorage.setItem('user', JSON.stringify(user));
+    try {
+      const response = await api.post('/auth/login/', {
+        identifier,
+        password,
+      });
 
-    console.log('✅ Login successful:', user);
-    window.location.href = '/dashboard';
-  } catch (err) {
-    console.error('❌ Login error:', err);
+      const { tokens, user } = response.data || {};
 
-    if (err.response) {
-      if (err.response.status === 400) {
-        setError('Invalid input provided.');
-      } else if (err.response.status === 401) {
+      if (!tokens?.access || !tokens?.refresh || !user) {
+        throw new Error('Missing tokens or user data in response.');
+      }
+
+      localStorage.setItem('accessToken', tokens.access);
+      localStorage.setItem('refreshToken', tokens.refresh);
+      localStorage.setItem('user', JSON.stringify(user));
+
+      console.log('✅ Login successful:', user);
+      window.location.href = '/dashboard';
+    } catch (err) {
+      console.error('❌ Login error:', err);
+
+      if (err.status === 400 && err.errors) {
+        const firstFieldError = Object.values(err.errors)[0][0];
+        setError(firstFieldError || err.message || 'Invalid input');
+      } else if (err.status === 401) {
         setError('Invalid email or password.');
       } else {
-        setError('Something went wrong. Please try again later.');
+        setError(err.message || 'Something went wrong. Please try again later.');
       }
-    } else {
-      setError('Unable to connect to server.');
+    } finally {
+      setIsLoading(false);
     }
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   const handleForgotPassword = () => {
     navigate('/forgot-password');
@@ -118,7 +118,7 @@ const LoginForm = () => {
           fullWidth
           variant="contained"
           color="primary"
-          disabled={isLoading}
+          disabled={isLoading || !identifier.trim() || !password.trim()}
           sx={{ mt: 2 }}
         >
           {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Login'}
