@@ -1,8 +1,9 @@
 // src/context/ThemeContext.jsx
-import React, { createContext, useState, useMemo, useContext } from 'react';
-import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles'; // Rename to avoid conflict
+
+import { createContext, useState, useMemo, useContext } from 'react';
+import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles'; 
 import CssBaseline from '@mui/material/CssBaseline';
-import getAppTheme from '../theme/theme.js'; // Import the theme creator function
+import getAppTheme from '../theme/theme.js'; 
 
 export const ColorModeContext = createContext({ toggleColorMode: () => {} });
 
@@ -18,7 +19,7 @@ export const ThemeProvider = ({ children }) => {
       toggleColorMode: () => {
         setMode((prevMode) => {
           const newMode = prevMode === 'light' ? 'dark' : 'light';
-          localStorage.setItem('themeMode', newMode); // Save preference
+          localStorage.setItem('themeMode', newMode); 
           return newMode;
         });
       },

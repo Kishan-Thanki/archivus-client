@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
-import { ROUTES, USER_ROLES } from '../config/constants';
+import { ROUTES } from '../config/constants';
 
 // Pages
 import SignupPage from '../pages/SignUp/SignupPage';

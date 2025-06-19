@@ -112,7 +112,7 @@ const clearAuthData = () => {
   Object.values(STORAGE_KEYS).forEach((key) => localStorage.removeItem(key));
 };
 
-// ✅ Fixed normalizeError
+// Fixed normalizeError
 const normalizeError = (error) => {
   const { response } = error;
 
@@ -121,7 +121,7 @@ const normalizeError = (error) => {
 
     return {
       message:
-        (typeof data === 'string' && data) || // plain string response
+        (typeof data === 'string' && data) || 
         (typeof data === 'object' && data.message) ||
         'Request failed',
       errors: (typeof data === 'object' && data.errors) || {},

@@ -1,4 +1,5 @@
 // src/Routes/PrivateRoutes.jsx
+
 import { Navigate } from 'react-router-dom';
 import { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
@@ -27,10 +28,8 @@ const PrivateRoute = ({
   if (loading) return <LoadingSpinner />;
   if (!user) return <Navigate to={ROUTES.LOGIN} replace />;
 
-  // Check if user has any of the required roles
   const hasRequiredRole = roles.length === 0 || roles.some(hasRole);
   
-  // Check if user meets minimal role requirement
   const meetsMinimalRole = !minimalRole || (
     ROLE_HIERARCHY.indexOf(user.role) >= 
     ROLE_HIERARCHY.indexOf(minimalRole)
