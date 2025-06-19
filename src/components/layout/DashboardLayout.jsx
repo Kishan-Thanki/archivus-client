@@ -1,4 +1,4 @@
-// Example structure in App.jsx or a DashboardLayout component
+// src/components/DashboardLayout.jsx
 
 import React from 'react';
 import {
@@ -13,16 +13,37 @@ import {
   ListItemText,
   ListItemIcon,
   Typography,
-  Paper,
+  Button,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import HomeIcon from '@mui/icons-material/Home';
+import InfoIcon from '@mui/icons-material/Info';
+import ContactMailIcon from '@mui/icons-material/ContactMail';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import { Outlet, useNavigate } from 'react-router-dom';
+// Import logo from assets
+import logo from '../../assets/logo.png';
+import useAuth from '../../hooks/useAuth';
 
-const drawerWidth = 240; // Example width
+const drawerWidth = 240;
 
 function DashboardLayout() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleLogout = () => {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    navigate('/login');
+  };
+
+  const handleNavigation = (path) => {
+    navigate(path);
+  };
+
   return (
     <Box sx={{ display: 'flex' }}>
-      {/* AppBar (Header) */}
+      {/* AppBar (Top Navbar) */}
       <AppBar
         position="fixed"
         sx={{
@@ -30,7 +51,26 @@ function DashboardLayout() {
           ml: `${drawerWidth}px`,
         }}
       >
-        <Toolbar>
+        <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
+
+          <Typography variant="h6" noWrap component="div" sx={{ bgcolor: 'primary.main', px: 1, borderRadius: 1 }}>
+            Welcome, {user?.username || user?.name || 'User'}!
+          </Typography>
+
+          {/* Navigation Buttons */}
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button onClick={() => handleNavigation('/dashboard')}>
+              Home
+            </Button>
+            <Button onClick={() => handleNavigation('/about')}>
+              About Us
+            </Button>
+            <Button onClick={() => handleNavigation('/contact')}>
+              Contact
+            </Button>
+          </Box>
+
+          {/* Search Field */}
           <TextField
             placeholder="Search..."
             variant="outlined"
@@ -40,9 +80,12 @@ function DashboardLayout() {
                 <SearchIcon sx={{ mr: 1, color: 'text.secondary' }} />
               ),
             }}
-            sx={{ flexGrow: 1, maxWidth: 400 }}
+            sx={{ mx: 2, maxWidth: 300 }}
           />
-          {/* Other header elements */}
+
+          <Button onClick={handleLogout}>
+            Logout
+          </Button>
         </Toolbar>
       </AppBar>
 
@@ -55,47 +98,62 @@ function DashboardLayout() {
           [`& .MuiDrawer-paper`]: { width: drawerWidth, boxSizing: 'border-box' },
         }}
       >
-        <Toolbar /> {/* To push content below AppBar */}
+        <Toolbar />
+        {/* Sidebar Logo and Brand */}
+        <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', mt: -6, ml:-4, mb: 0, gap: 0 }}>
+          <img src={logo} alt="Archivus Logo" style={{ width: 70, height: 55, borderRadius: 8 }} />
+          <Typography variant="h6" sx={{ fontWeight: 'bold', letterSpacing: 1, ml: 0 }}>
+            Archivus
+          </Typography>
+        </Box>
         <Box sx={{ overflow: 'auto', p: 1 }}>
           <List>
             <ListItem disablePadding>
-              <ListItemButton selected> {/* Use selected prop for active item */}
-                <ListItemText primary="Lightenam" />
+              <ListItemButton onClick={() => handleNavigation('/dashboard')}>
+                <ListItemIcon>
+                  <HomeIcon />
+                </ListItemIcon>
+                <ListItemText primary="Home" />
               </ListItemButton>
             </ListItem>
+
             <ListItem disablePadding>
-              <ListItemButton>
-                <ListItemText primary="Selaid" />
+              <ListItemButton onClick={() => handleNavigation('/about')}>
+                <ListItemIcon>
+                  <InfoIcon />
+                </ListItemIcon>
+                <ListItemText primary="About Us" />
               </ListItemButton>
             </ListItem>
-            {/* ... other navigation items like Resend, Prognates, Secount, Account */}
+
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleNavigation('/contact')}>
+                <ListItemIcon>
+                  <ContactMailIcon />
+                </ListItemIcon>
+                <ListItemText primary="Contact" />
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => handleNavigation('/profile')}>
+                <ListItemIcon>
+                  <AccountCircleIcon />
+                </ListItemIcon>
+                <ListItemText primary="Profile" />
+              </ListItemButton>
+            </ListItem>
           </List>
         </Box>
       </Drawer>
 
-      {/* Main Content Area */}
+      {/* Main Content */}
       <Box
         component="main"
         sx={{ flexGrow: 1, bgcolor: 'background.default', p: 3, ml: `${drawerWidth}px` }}
       >
-        <Toolbar /> {/* To push content below AppBar */}
-        <Typography variant="h4" gutterBottom>
-          Papers
-        </Typography>
-        <Box>
-          {/* Example of a "Paper" item using MuiPaper */}
-          <Paper elevation={0} sx={{ p: 2, mb: 2, border: '1px solid', borderColor: 'divider' }}>
-            <Typography variant="h6">Presat Paper</Typography>
-            <Typography variant="body2" color="text.secondary">Aligration fiur wrrapnouix</Typography>
-            <Typography variant="caption" color="text.secondary">4 Jun 2024</Typography>
-          </Paper>
-          <Paper elevation={0} sx={{ p: 2, mb: 2, border: '1px solid', borderColor: 'divider' }}>
-            <Typography variant="h6">Patent Paper</Typography>
-            <Typography variant="body2" color="text.secondary">Aligration fiur wrrapnouix</Typography>
-            <Typography variant="caption" color="text.secondary">4 Jun 2024</Typography>
-          </Paper>
-          {/* ... more paper items */}
-        </Box>
+        <Toolbar />
+        <Outlet />
       </Box>
     </Box>
   );
