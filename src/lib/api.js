@@ -1,9 +1,7 @@
 import axios from 'axios';
 
-// ✅ Use environment variable or fallback to localhost
-const API_BASE_URL = 'http://127.0.0.1:8000/api/v1/';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000/api/v1/';
 
-// 📦 Create Axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -11,14 +9,14 @@ const api = axios.create({
   },
 });
 
-// 🔐 Redirect to login and clear tokens
+// Redirect to login and clear tokens
 const redirectToLogin = () => {
   localStorage.removeItem('accessToken');
   localStorage.removeItem('refreshToken');
   window.location.href = '/login';
 };
 
-// 🛡️ Attach access token to every request
+// Attach access token to every request
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('accessToken');
@@ -30,9 +28,19 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// 🔄 Handle token refresh when 401 is encountered
+// Unwrap "data" from success response
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Auto-unwrap nested success responses
+    if (response.data?.success) {
+      return {
+        ...response,
+        data: response.data.data,   // Only return the inner `data`
+        message: response.data.message,
+      };
+    }
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
 
@@ -46,29 +54,36 @@ api.interceptors.response.use(
       const refreshToken = localStorage.getItem('refreshToken');
 
       if (!refreshToken) {
-        console.warn('⚠️ No refresh token found. Redirecting to login.');
         redirectToLogin();
         return Promise.reject(error);
       }
 
       try {
-        // <-- Changed here from axios.post to api.post
-        const refreshResponse = await api.post('/auth/refresh/', {
+        const refreshResponse = await axios.post(`${API_BASE_URL}auth/refresh/`, {
           refresh: refreshToken,
         });
 
-        const { access, refresh } = refreshResponse.data;
+        const { access, refresh } = refreshResponse.data.data; 
 
         localStorage.setItem('accessToken', access);
         localStorage.setItem('refreshToken', refresh);
 
         originalRequest.headers.Authorization = `Bearer ${access}`;
-        return api(originalRequest); // Retry original request
+        return api(originalRequest); 
       } catch (refreshError) {
-        console.error('❌ Token refresh failed:', refreshError);
         redirectToLogin();
         return Promise.reject(refreshError);
       }
+    }
+
+    // Optional: Centralize API error handling (matching your backend)
+    const backendResponse = error.response?.data;
+    if (backendResponse?.success === false) {
+      return Promise.reject({
+        message: backendResponse.message,
+        errors: backendResponse.errors || {},
+        status: error.response?.status,
+      });
     }
 
     return Promise.reject(error);
