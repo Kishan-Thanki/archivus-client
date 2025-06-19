@@ -28,6 +28,10 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  min-height: 100%;
+  width: 100vw;
+  box-sizing: border-box;
+  background: var(--background, #f8f9fb);
 }
 
 h1 {
@@ -52,6 +56,21 @@ button:hover {
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  text-align: initial;
+  max-width: none;
 }
 
 @media (prefers-color-scheme: light) {

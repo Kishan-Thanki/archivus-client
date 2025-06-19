@@ -1,4 +1,4 @@
-import api from '../lib/api.js'; 
+import api from '../config/api.js'; 
 
 /**
  * Fetches the list of all available degree levels.

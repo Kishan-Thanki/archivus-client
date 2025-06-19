@@ -10,34 +10,40 @@ import {
   Link,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import api from '../../lib/api';
+import { AuthService } from '../../services/authService';
 
-const LoginForm = () => {
+const LoginPage = () => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [touched, setTouched] = useState({ identifier: false, password: false });
   const navigate = useNavigate();
+
+  const isEmailValid = (email) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
 
-    // ✅ Client-side validation
-    if (!identifier.trim() || !password.trim()) {
+    const email = identifier.trim();
+    const pwd = password.trim();
+
+    if (!email || !pwd) {
       setError('Email and password are required.');
+      return;
+    }
+    if (!isEmailValid(email)) {
+      setError('Please enter a valid email address.');
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const response = await api.post('/auth/login/', {
-        identifier,
-        password,
-      });
-
-      const { tokens, user } = response.data || {};
+      const response = await AuthService.login({ identifier: email, password: pwd });
+      const { tokens, user } = response.data || response;
 
       if (!tokens?.access || !tokens?.refresh || !user) {
         throw new Error('Missing tokens or user data in response.');
@@ -47,18 +53,22 @@ const LoginForm = () => {
       localStorage.setItem('refreshToken', tokens.refresh);
       localStorage.setItem('user', JSON.stringify(user));
 
-      console.log('✅ Login successful:', user);
       window.location.href = '/dashboard';
     } catch (err) {
-      console.error('❌ Login error:', err);
+      // Debugging aid
+      console.error('Login error:', err);
 
-      if (err.status === 400 && err.errors) {
-        const firstFieldError = Object.values(err.errors)[0][0];
+      const status = err.status;
+
+      if (status === 400 && err.errors) {
+        const firstFieldError = Object.values(err.errors)?.[0]?.[0];
         setError(firstFieldError || err.message || 'Invalid input');
-      } else if (err.status === 401) {
+      } else if (status === 401) {
         setError('Invalid email or password.');
+      } else if (err.message) {
+        setError(err.message);
       } else {
-        setError(err.message || 'Something went wrong. Please try again later.');
+        setError('Something went wrong. Please try again later.');
       }
     } finally {
       setIsLoading(false);
@@ -68,6 +78,8 @@ const LoginForm = () => {
   const handleForgotPassword = () => {
     navigate('/forgot-password');
   };
+
+  const isFormValid = identifier.trim() && password.trim() && isEmailValid(identifier);
 
   return (
     <Paper elevation={3} sx={{ p: 4, maxWidth: 400, mx: 'auto', mt: 8 }}>
@@ -86,17 +98,29 @@ const LoginForm = () => {
           label="Email"
           type="email"
           value={identifier}
-          onChange={(e) => setIdentifier(e.target.value)}
+          onChange={(e) => {
+            setIdentifier(e.target.value);
+            setTouched((prev) => ({ ...prev, identifier: true }));
+          }}
           fullWidth
           required
           margin="normal"
+          error={touched.identifier && !!identifier && !isEmailValid(identifier)}
+          helperText={
+            touched.identifier && identifier && !isEmailValid(identifier)
+              ? 'Enter a valid email address'
+              : ''
+          }
         />
 
         <TextField
           label="Password"
           type="password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) => {
+            setPassword(e.target.value);
+            setTouched((prev) => ({ ...prev, password: true }));
+          }}
           fullWidth
           required
           margin="normal"
@@ -118,7 +142,7 @@ const LoginForm = () => {
           fullWidth
           variant="contained"
           color="primary"
-          disabled={isLoading || !identifier.trim() || !password.trim()}
+          disabled={isLoading || !isFormValid}
           sx={{ mt: 2 }}
         >
           {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Login'}
@@ -128,4 +152,4 @@ const LoginForm = () => {
   );
 };
 
-export default LoginForm;
+export default LoginPage;

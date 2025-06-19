@@ -1,20 +1,24 @@
+// src/main.jsx
+
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 
-// Context Providers
-import { ThemeProvider } from './context/ThemeContext.jsx';
-import { AuthProvider } from './context/AuthContext.jsx';
+// Context Providers 
+import { ThemeProvider } from './context/ThemeContext';
+import { AuthProvider } from './context/AuthContext';
 
 // App Entry
-import App from './App.jsx';
+import App from './App';
 
-// Global Styles (optional)
+// Global Styles
 import './index.css';
 
-createRoot(document.getElementById('root')).render(
+const root = createRoot(document.getElementById('root'));
+
+root.render(
   <StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <ThemeProvider>
         <AuthProvider>
           <App />

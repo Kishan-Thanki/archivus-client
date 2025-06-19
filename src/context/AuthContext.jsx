@@ -1,63 +1,94 @@
 // src/context/AuthContext.jsx
-
-import { createContext, useState, useEffect } from 'react';
+import { createContext, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
-import { loginUser } from '../services/authService';
+import { AuthService } from '../services/authService';
+import { STORAGE_KEYS, ROUTES, AUTH_MESSAGES } from '../config/constants';
 
-export const AuthContext = createContext(null);
+export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  const decodeToken = (token) => {
+  // Token validation
+  const validateToken = useCallback((token) => {
+    if (!token) return null;
     try {
-      return jwtDecode(token);
+      const decoded = jwtDecode(token);
+      return decoded.exp * 1000 > Date.now() ? decoded : null;
     } catch {
       return null;
     }
-  };
-
-  useEffect(() => {
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      const decodedUser = decodeToken(token);
-      if (decodedUser) setUser(decodedUser);
-    }
-    setLoading(false);
   }, []);
 
-  const login = async (credentials) => {
-    setLoading(true);
+  // Initialize auth state
+  const initializeAuth = useCallback(async () => {
     try {
-      const data = await loginUser(credentials);
-      localStorage.setItem('accessToken', data.tokens.access);
-      localStorage.setItem('refreshToken', data.tokens.refresh);
-      const decodedUser = decodeToken(data.tokens.access);
-      setUser(decodedUser);
-      navigate('/dashboard');
-      return true;
-    } catch (err) {
-      console.error('Login failed:', err);
+      const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+      const userData = localStorage.getItem(STORAGE_KEYS.USER);
+      
+      if (token && userData) {
+        const isValid = validateToken(token);
+        if (isValid) {
+          setUser(JSON.parse(userData));
+        }
+      }
+    } finally {
       setLoading(false);
-      return false;
+    }
+  }, [validateToken]);
+
+  useEffect(() => { 
+    initializeAuth(); 
+  }, [initializeAuth]);
+
+  // Login handler
+  const login = async (credentials) => {
+    try {
+      setLoading(true);
+      const { access, refresh, user: userData } = await AuthService.login(credentials);
+      
+      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, access);
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refresh);
+      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(userData));
+      
+      setUser(userData);
+      navigate(ROUTES.DASHBOARD);
+    } catch (error) {
+      throw error.response?.data?.message || AUTH_MESSAGES.INVALID_CREDENTIALS;
+    } finally {
+      setLoading(false);
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+  // Logout handler
+  const logout = useCallback(() => {
+    Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
     setUser(null);
-    navigate('/login');
+    navigate(ROUTES.LOGIN);
+  }, [navigate]);
+
+  // Role checker
+  const hasRole = useCallback(
+    (role) => user?.role === role,
+    [user]
+  );
+
+  // Context value
+  const contextValue = {
+    user,
+    loading,
+    isAuthenticated: !!user,
+    login,
+    logout,
+    hasRole,
   };
 
-  const value = { user, loading, login, logout };
-
   return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
+    <AuthContext.Provider value={contextValue}>
+      {children}
     </AuthContext.Provider>
   );
 };

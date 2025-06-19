@@ -1,41 +1,44 @@
 import { Routes, Route } from 'react-router-dom';
+import { ROUTES, USER_ROLES } from '../config/constants';
 
 // Pages
-import SignupPage from '../pages/SignUp/SignupPage.jsx';
-import LoginPage from '../pages/Login/LoginPage.jsx';
-import DashboardPage from '../pages/Dashboard/DashboardPage.jsx';
-import NotFoundPage from '../pages/NotFoundPage/NotFoundPage.jsx';
+import SignupPage from '../pages/SignUp/SignupPage';
+import LoginPage from '../pages/Login/LoginPage';
+import DashboardPage from '../pages/Dashboard/DashboardPage';
+import UnauthorizedPage from '../pages/Errors/UnauthorizedPage';
+import NotFoundPage from '../pages/Errors/NotFoundPage';
 
 // Layout
-import DashboardLayout from '../components/layout/DashboardLayout.jsx';
+import DashboardLayout from '../components/layout/DashboardLayout';
 
-// Auth wrapper
-import PrivateRoute from './PrivateRoute.jsx';
+// Auth
+import PrivateRoute from './PrivateRoutes';
 
-const AppRoutes = () => {
-  return (
-    <Routes>
-      {/* Public Routes */}
-      <Route path="/signup" element={<SignupPage />} />
-      <Route path="/login" element={<LoginPage />} />
+const AppRoutes = () => (
+  <Routes>
+    {/* Public Routes */}
+    <Route path={ROUTES.LOGIN} element={<LoginPage />} />
+    <Route path={ROUTES.SIGNUP} element={<SignupPage />} />
+    <Route path={ROUTES.UNAUTHORIZED} element={<UnauthorizedPage />} />
 
-      {/* Protected Routes (wrapped in PrivateRoute) */}
-      <Route
-        path="/"
-        element={
-          <PrivateRoute>
-            <DashboardLayout />
-          </PrivateRoute>
-        }
-      >
-        <Route index element={<DashboardPage />} />
-        <Route path="dashboard" element={<DashboardPage />} />
-      </Route>
+    {/* Protected Routes */}
+    <Route
+      path="/"
+      element={
+        <PrivateRoute>
+          <DashboardLayout />
+        </PrivateRoute>
+      }
+    >
+      <Route index element={<DashboardPage />} />
+      <Route path={ROUTES.DASHBOARD} element={<DashboardPage />} />
+      
+      {/* Additional protected routes can go here */}
+    </Route>
 
-      {/* Catch-all Route */}
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
-  );
-};
+    {/* Catch-all Route */}
+    <Route path="*" element={<NotFoundPage />} />
+  </Routes>
+);
 
 export default AppRoutes;
