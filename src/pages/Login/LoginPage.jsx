@@ -123,6 +123,17 @@ const LoginForm = () => {
         >
           {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Login'}
         </Button>
+        
+        <Box display="flex" justifyContent="center" mt={2}>
+          <Link
+            component="button"
+            variant="body2"
+            onClick={() => navigate('/signup')}
+            underline="hover"
+          >
+            Don't have an account? Sign Up
+          </Link>
+        </Box>
       </Box>
     </Paper>
   );
